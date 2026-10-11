@@ -689,23 +689,41 @@ async function callAgent(agent,ctx,onChunk,signal){
 // ── RUN SINGLE ────────────────────────────────────────────────────
 async function runSingleAgent(id){
   const agent=AGENTS[id];if(!agent)return;
+
+  // Block immediately if no API key
+  const key=localStorage.getItem("cm_api_key");
+  if(!key||key.length<10){
+    showView("output");
+    $("out-emoji").textContent="⚠️";
+    $("out-name").textContent="No API key";
+    $("out-running-pill").style.display="none";
+    $("out-box").textContent="⚠️  No API key set.\n\nHow to get your free key (2 min):\n1. Go to https://aistudio.google.com/app/apikey\n2. Click \"Create API key\"\n3. Copy the key (starts with AIzaSy…)\n4. Click ⚙️ in the top right → paste it → Save\n\nThen run the sequence again.";
+    setBadge("error","No API key");
+    $("h-status-text").textContent="Set your API key first";
+    state.lastError="no_key";
+    return false;
+  }
+
   state.currentAgent=id;
-  state.abort=new AbortController();
+  state.lastError=null;
   state.outputs[id]="";
   setPipeStatus(id,"running");
   setBadge("running",agent.label);
   $("h-status-text").textContent=`Running ${agent.label}…`;
 
   // Show output pane immediately
-  showAgentOutput(id);
+  state.selectedView=id;
+  $("out-emoji").textContent=agent.emoji;
+  $("out-name").textContent=agent.label;
+  $("out-box").textContent="";
   $("out-running-pill").style.display="flex";
+  showView("output");
 
   try{
     const result=await callAgent(agent,getBrief(),partial=>{
       state.outputs[id]=partial;
       if(state.selectedView===id){
         $("out-box").textContent=partial;
-        // scroll to bottom
         const box=$("out-box");box.scrollTop=box.scrollHeight;
       }
     },state.abort.signal);
@@ -715,13 +733,39 @@ async function runSingleAgent(id){
     if(state.selectedView===id)$("out-box").textContent=result;
     $("h-status-text").textContent=`${agent.label} done`;
     setBadge("ready","Ready");
+    state.currentAgent=null;
+    return true;
   }catch(e){
-    if(e.name==="AbortError"){setPipeStatus(id,"");setBadge("ready","Stopped");}
-    else{setPipeStatus(id,"error");setBadge("error","Error");toast("Error: "+e.message.slice(0,60),3000);}
+    state.currentAgent=null;
     $("out-running-pill").style.display="none";
-    $("h-status-text").textContent="";
+    if(e.name==="AbortError"){
+      setPipeStatus(id,"");
+      setBadge("ready","Stopped");
+      $("h-status-text").textContent="Stopped";
+      return false;
+    }
+    // Show full error in the output box
+    const msg=e.message||"Unknown error";
+    let help="";
+    if(msg.includes("API_KEY_INVALID")||msg.includes("400"))
+      help="\n\n→ Your API key looks invalid. Double-check it in ⚙️ Settings.\n  Get a new one at https://aistudio.google.com/app/apikey";
+    else if(msg.includes("403"))
+      help="\n\n→ API key rejected. Make sure you copied the full key from Google AI Studio.";
+    else if(msg.includes("429"))
+      help="\n\n→ Rate limit hit. Wait 60 seconds and try again (free tier: 15 req/min).";
+    else if(msg.includes("Failed to fetch")||msg.includes("NetworkError"))
+      help="\n\n→ Network error. Check your internet connection.";
+
+    const errorText=`❌  ${agent.label} failed\n${"─".repeat(40)}\n${msg}${help}`;
+    state.outputs[id]=errorText;
+    $("out-box").textContent=errorText;
+    setPipeStatus(id,"error");
+    setBadge("error","Error");
+    $("h-status-text").textContent="Error — see output for details";
+    state.lastError=msg;
+    toast("❌ "+msg.slice(0,50),4000);
+    return false;
   }
-  state.currentAgent=null;
 }
 
 // ── RUN SEQUENCE ──────────────────────────────────────────────────
@@ -735,8 +779,8 @@ async function runSequence(){
   for(const id of seq){
     if(state.abort.signal.aborted)break;
     if(id==="executor"){
-      await runSingleAgent(id);
-      if(state.abort.signal.aborted)break;
+      const ok=await runSingleAgent(id);
+      if(!ok||state.abort.signal.aborted)break;
       // Show approval modal
       $("approval-overlay").classList.add("show");
       setBadge("running","Awaiting approval");
@@ -747,8 +791,8 @@ async function runSequence(){
       $("h-status-text").textContent="Approved ✓";
       continue;
     }
-    await runSingleAgent(id);
-    if(state.abort.signal.aborted)break;
+    const ok=await runSingleAgent(id);
+    if(!ok||state.abort.signal.aborted)break;
     await new Promise(r=>setTimeout(r,250));
   }
 
@@ -766,7 +810,16 @@ $("btn-run").addEventListener("click",()=>{
     $("run-icon").textContent="▶";$("run-label").textContent="Run Sequence";
     $("approval-overlay").classList.remove("show");
     setBadge("ready","Stopped");$("h-status-text").textContent="Stopped";
-  }else{runSequence();}
+  }else{
+    // Check key before starting
+    const key=localStorage.getItem("cm_api_key");
+    if(!key||key.length<10){
+      openSettings();
+      toast("⚠️ Set your free API key first",3000);
+      return;
+    }
+    runSequence();
+  }
 });
 
 $("btn-approve").addEventListener("click",()=>state.approvalResolve?.(true));
