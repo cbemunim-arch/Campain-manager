@@ -658,7 +658,7 @@ async function callAgent(agent,ctx,onChunk,signal){
   // Gemini combines system + user into one turn
   const combinedPrompt=`${agent.system}\n\n---\n\n${agent.buildPrompt(ctx)}`;
 
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`;
+  const url=`https://generativelanguage.googleapis.com/v1/models/${model}:streamGenerateContent?alt=sse&key=${key}`;
   const res=await fetch(url,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
