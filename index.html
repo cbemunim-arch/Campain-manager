@@ -1,188 +1,768 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Campaign Manager</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="src/style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Campaign Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────────────── */
+:root{
+  --bg0:#0d0f14; --bg1:#161920; --bg2:#1e2330; --bg3:#252d3d;
+  --border:#2a3347; --border2:#354060;
+  --text:#e2e8f0; --text2:#94a3b8; --text3:#475569;
+  --blue:#3d6fff; --blue2:#2952cc; --blue-glow:rgba(61,111,255,.18);
+  --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+  --r:10px; --r-sm:6px;
+  --sidebar:260px;
+  --header:52px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg0);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;overflow:hidden}
+
+/* ── LAYOUT ─────────────────────────────────────────────────────── */
+#shell{display:flex;flex-direction:column;height:100vh}
+#header{height:var(--header);background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;z-index:50}
+#body{display:flex;flex:1;overflow:hidden}
+#sidebar{width:var(--sidebar);background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+#main{flex:1;overflow-y:auto;background:var(--bg0)}
+
+/* ── HEADER ─────────────────────────────────────────────────────── */
+.h-logo{display:flex;align-items:center;gap:10px}
+.h-mark{width:28px;height:28px;background:var(--blue);border-radius:7px;display:grid;place-items:center;font-weight:600;font-size:13px;letter-spacing:-.5px;flex-shrink:0}
+.h-title{font-weight:600;font-size:15px;letter-spacing:-.3px}
+.h-status{font-size:12px;color:var(--text2);margin-right:auto}
+#h-status-text{color:var(--text2)}
+.h-badge{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text2)}
+.h-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--text3)}
+.h-badge.ready .dot{background:var(--green)}
+.h-badge.running .dot{background:var(--blue);animation:blink 1s infinite}
+.h-badge.error .dot{background:var(--red)}
+.btn-brief{padding:6px 14px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-brief:hover{color:var(--text);border-color:var(--border2)}
+
+/* ── SIDEBAR — PIPELINE ──────────────────────────────────────────── */
+.sb-section{padding:16px 12px 8px;font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.04em;text-transform:uppercase}
+.sb-seq{padding:8px 12px;display:flex;align-items:center;gap:8px}
+.sb-seq select{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:6px 8px;font-family:'Inter',sans-serif;font-size:12px}
+.btn-run{width:calc(100% - 24px);margin:4px 12px 12px;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-run:hover{background:var(--blue2)}
+.btn-run.stop{background:#7f1d1d;color:#fca5a5}
+.btn-run.stop:hover{background:#991b1b}
+
+.pipeline{padding:0 12px 16px;display:flex;flex-direction:column;gap:2px}
+.pipe-group-label{font-size:10px;color:var(--text3);padding:10px 4px 4px;letter-spacing:.05em}
+
+.pipe-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;transition:background .12s;position:relative}
+.pipe-item:hover{background:var(--bg2)}
+.pipe-item.active{background:var(--bg3);outline:1px solid var(--border2)}
+.pipe-item.done{opacity:1}
+.pipe-emoji{font-size:15px;flex-shrink:0;width:20px;text-align:center}
+.pipe-name{font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pipe-status{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--bg3);border:1px solid var(--border)}
+.pipe-status.done{background:var(--green);border-color:var(--green)}
+.pipe-status.running{background:var(--blue);border-color:var(--blue);animation:blink 1s infinite}
+.pipe-status.error{background:var(--red);border-color:var(--red)}
+.pipe-connector{width:1px;height:10px;background:var(--border);margin-right:auto;margin-left:19px}
+
+/* ── MAIN AREA ───────────────────────────────────────────────────── */
+#main{padding:24px}
+
+/* Welcome */
+#view-welcome{max-width:560px;margin:60px auto;text-align:center}
+.welcome-icon{font-size:48px;margin-bottom:20px}
+.welcome-title{font-size:22px;font-weight:600;margin-bottom:10px}
+.welcome-sub{color:var(--text2);font-size:14px;line-height:1.7;margin-bottom:32px}
+.welcome-steps{display:flex;flex-direction:column;gap:12px;text-align:right;margin-bottom:32px}
+.w-step{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:flex-start;gap:14px}
+.w-step-num{width:24px;height:24px;background:var(--blue);border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px}
+.w-step-body strong{display:block;font-size:13px;margin-bottom:3px}
+.w-step-body span{font-size:12px;color:var(--text2)}
+.btn-start{padding:11px 28px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer}
+.btn-start:hover{background:var(--blue2)}
+
+/* Output view */
+#view-output{display:none}
+.out-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.out-agent-badge{display:flex;align-items:center;gap:8px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px}
+.out-emoji{font-size:18px}
+.out-name{font-size:14px;font-weight:500}
+.out-running-pill{display:flex;align-items:center;gap:6px;background:rgba(61,111,255,.12);border:1px solid rgba(61,111,255,.3);border-radius:20px;padding:4px 12px;font-size:12px;color:#93b4ff}
+.out-running-pill .pulse{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:blink 1s infinite}
+.out-actions{display:flex;gap:8px;margin-right:auto}
+.btn-sm{padding:6px 12px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer}
+.btn-sm:hover{color:var(--text);border-color:var(--border2)}
+.out-box{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;font-family:'Menlo','Monaco','Courier New',monospace;font-size:12.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;min-height:300px;max-height:calc(100vh - 200px);overflow-y:auto;color:var(--text)}
+.out-box .streaming-cursor{display:inline-block;width:2px;height:14px;background:var(--blue);animation:blink .7s infinite;vertical-align:middle;margin-right:2px}
+
+/* All outputs grid */
+#view-all{display:none}
+.all-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.all-header h2{font-size:16px;font-weight:600}
+.out-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.out-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:border-color .15s}
+.out-card:hover{border-color:var(--border2)}
+.oc-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.oc-emoji{font-size:16px}
+.oc-name{font-size:13px;font-weight:500;flex:1}
+.oc-done{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.oc-preview{font-size:11px;color:var(--text2);line-height:1.6;font-family:monospace;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+
+/* ── APPROVAL GATE ───────────────────────────────────────────────── */
+#approval-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;place-items:center}
+#approval-overlay.show{display:grid}
+.approval-modal{background:var(--bg1);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;max-width:420px;width:90%;text-align:center}
+.am-icon{font-size:36px;margin-bottom:14px}
+.am-title{font-size:16px;font-weight:600;margin-bottom:8px}
+.am-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.am-actions{display:flex;gap:10px;justify-content:center}
+.btn-approve{padding:10px 24px;background:#166534;color:#86efac;border:1px solid #166534;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.btn-approve:hover{background:#15803d}
+.btn-reject{padding:10px 24px;background:#7f1d1d;color:#fca5a5;border:1px solid #7f1d1d;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.btn-reject:hover{background:#991b1b}
+
+/* ── BRIEF DRAWER ────────────────────────────────────────────────── */
+#brief-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100}
+#brief-overlay.show{display:block}
+#brief-drawer{position:fixed;top:0;right:0;bottom:0;width:500px;max-width:95vw;background:var(--bg1);border-left:1px solid var(--border);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+#brief-drawer.open{transform:translateX(0)}
+.bd-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.bd-title{font-size:15px;font-weight:600}
+.btn-close-brief{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;padding:2px}
+.bd-body{flex:1;overflow-y:auto;padding:20px}
+.bd-section{font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-top:20px;margin-bottom:10px}
+.bd-section:first-child{margin-top:0}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.field input,.field textarea,.field select{width:100%;padding:9px 11px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:13px;resize:vertical;transition:border-color .15s}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
+.field textarea{line-height:1.6}
+.bd-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.btn-save-brief{flex:1;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.btn-save-brief:hover{background:var(--blue2)}
+
+/* ── SETTINGS DRAWER ─────────────────────────────────────────────── */
+#settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100}
+#settings-overlay.show{display:block}
+#settings-drawer{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:95vw;background:var(--bg1);border-left:1px solid var(--border);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+#settings-drawer.open{transform:translateX(0)}
+.key-row{display:flex;gap:8px}
+.key-row input{flex:1}
+.key-note{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5}
+.key-status{display:flex;align-items:center;gap:8px;font-size:12px;padding:10px 12px;background:var(--bg2);border-radius:var(--r-sm);border:1px solid var(--border)}
+.ks-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ks-dot.green{background:var(--green)}
+.ks-dot.red{background:var(--red)}
+.btn-save-key{padding:9px 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn-save-key:hover{background:var(--blue2)}
+.danger-zone{margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.danger-zone p{font-size:12px;color:var(--text3);margin-bottom:10px}
+.btn-danger{padding:8px 14px;background:none;border:1px solid #7f1d1d;color:#fca5a5;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer}
+.btn-danger:hover{background:#7f1d1d}
+
+/* ── TOAST ───────────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 20px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:300;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── ANIMATIONS ──────────────────────────────────────────────────── */
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── SCROLLBAR ───────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────── */
+@media(max-width:640px){
+  #sidebar{display:none}
+  #brief-drawer,#settings-drawer{width:100%}
+}
+</style>
 </head>
 <body>
-  <div id="app">
+<div id="shell">
 
-    <!-- Header -->
-    <header class="header">
-      <div class="header-inner">
-        <div class="logo">
-          <span class="logo-mark">C</span>
-          <div>
-            <div class="logo-title">Campaign Manager</div>
-            <div class="logo-sub" id="status-bar">מוכן להרצה</div>
-          </div>
-        </div>
-        <nav class="tabs">
-          <button class="tab active" data-tab="agents">סוכנים</button>
-          <button class="tab" data-tab="brief">בריף</button>
-          <button class="tab" data-tab="output">תוצאות</button>
-          <button class="tab" data-tab="log">לוג</button>
-          <button class="tab" data-tab="settings">הגדרות</button>
-        </nav>
-      </div>
-    </header>
+  <!-- HEADER -->
+  <header id="header">
+    <div class="h-logo">
+      <div class="h-mark">C</div>
+      <span class="h-title">Campaign Manager</span>
+    </div>
+    <span class="h-status" id="h-status-text">Ready</span>
+    <div class="h-badge ready" id="h-badge"><span class="dot"></span><span id="h-badge-text">Idle</span></div>
+    <button class="btn-brief" id="btn-open-brief">✏️ Brief</button>
+    <button class="btn-brief" id="btn-open-settings">⚙️</button>
+  </header>
 
-    <!-- AGENTS TAB -->
-    <div class="tab-content active" id="tab-agents">
+  <div id="body">
 
-      <div class="sequence-bar">
-        <span class="seq-label">רצף:</span>
-        <select id="sequence-select">
-          <option value="launch">השקה מלאה</option>
-          <option value="copy">ספרינט קופי</option>
-          <option value="ugc">UGC מהיר</option>
-          <option value="optimize">מחזור אופטימיזציה</option>
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <div class="sb-section">Sequence</div>
+      <div class="sb-seq">
+        <select id="seq-select">
+          <option value="launch">Full Launch</option>
+          <option value="copy">Copy Sprint</option>
+          <option value="ugc">UGC Fast</option>
+          <option value="optimize">Optimization</option>
         </select>
-        <div class="seq-preview" id="seq-preview">🎣 ✍️ 📝 🎬 🎨 💰 📊 ✅</div>
-        <button class="btn-run" id="btn-run">▶ הרץ רצף</button>
       </div>
+      <button class="btn-run" id="btn-run">
+        <span id="run-icon">▶</span><span id="run-label">Run Sequence</span>
+      </button>
 
-      <div class="approval-gate hidden" id="approval-gate">
-        <span class="approval-icon">⚠️</span>
-        <div class="approval-text">
-          <strong>נדרש אישור לפני ביצוע</strong>
-          <span>קרא את תוצאת ה-Executor ואשר להמשיך</span>
-        </div>
-        <button class="btn-approve" id="btn-approve">✓ אשר</button>
-        <button class="btn-reject"  id="btn-reject">✗ דחה</button>
+      <div class="pipeline" id="pipeline"></div>
+
+      <div style="margin-top:auto;padding:12px">
+        <button class="btn-sm" style="width:100%;text-align:center" id="btn-view-all">View all outputs</button>
       </div>
+    </aside>
 
-      <div class="agents-wrapper">
-        <div class="layer">
-          <div class="layer-label">🎯 ביצוע — קונטנט וקופי</div>
-          <div class="agent-grid" id="grid-execution"></div>
-        </div>
-        <div class="layer">
-          <div class="layer-label">🚀 השקה</div>
-          <div class="agent-grid" id="grid-launch"></div>
-        </div>
-        <div class="layer">
-          <div class="layer-label">📈 אופטימיזציה</div>
-          <div class="agent-grid" id="grid-optimization"></div>
-        </div>
-        <div class="layer">
-          <div class="layer-label">⚙️ אישור</div>
-          <div class="agent-grid" id="grid-orchestration"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- BRIEF TAB -->
-    <div class="tab-content" id="tab-brief">
-      <div class="brief-panel">
-        <h2>בריף קמפיין</h2>
-        <p class="brief-note">מלא את הפרטים — נשמרים אוטומטית בדפדפן.</p>
-
-        <div class="field-group">
-          <label>שם עסק / לקוח</label>
-          <input type="text" id="field-client" placeholder="לדוגמה: Studio X" />
-        </div>
-        <div class="field-group">
-          <label>מוצר / שירות</label>
-          <textarea id="field-product" rows="4" placeholder="תאר את המוצר, המסלולים, המחירים..."></textarea>
-        </div>
-        <div class="field-group">
-          <label>קהל יעד</label>
-          <textarea id="field-audience" rows="3" placeholder="מין, גיל, מיקום, מעמד סוציו-אקונומי, תחומי עניין..."></textarea>
-        </div>
-        <div class="field-group">
-          <label>יעד קמפיין</label>
-          <textarea id="field-goal" rows="2" placeholder="מה אנחנו רוצים להשיג? לידים, מכירות, תיאום שיחות..."></textarea>
-        </div>
-        <div class="field-group">
-          <label>תקציב חודשי (ש"ח)</label>
-          <input type="text" id="field-budget" placeholder="3000" />
-        </div>
-        <div class="field-group">
-          <label>אווטאר פסיכולוגי</label>
-          <textarea id="field-avatar" rows="7" placeholder="NAME_AGE: &#10;CORE_PAIN: &#10;HIDDEN_SECRET: &#10;COMMON_ENEMY: &#10;2AM_THOUGHT: &#10;TRIBAL_LANGUAGE: &#10;STATUS_DREAM: &#10;BUYING_TRIGGER:"></textarea>
-        </div>
-        <div class="field-group">
-          <label>מחקר שוק</label>
-          <textarea id="field-research" rows="5" placeholder="PAINS: &#10;DESIRES: &#10;OBJECTIONS: &#10;LANGUAGE: &#10;HOOKS:"></textarea>
-        </div>
-        <div class="field-group">
-          <label>USP</label>
-          <textarea id="field-usp" rows="4" placeholder="USP_SENTENCE: &#10;MECHANISM: &#10;ENEMY: &#10;BRIDGE: &#10;PRESENTER_VOICE:"></textarea>
-        </div>
-        <button class="btn-save-brief" id="btn-save-brief">💾 שמור בריף</button>
-      </div>
-    </div>
-
-    <!-- OUTPUT TAB -->
-    <div class="tab-content" id="tab-output">
-      <div class="output-panel">
-        <div class="output-toolbar">
-          <select id="output-select">
-            <option value="">— בחר סוכן לצפייה —</option>
-          </select>
-          <button class="btn-copy"   id="btn-copy-output">העתק</button>
-          <button class="btn-export" id="btn-export">ייצא הכל</button>
-        </div>
-        <pre class="output-box" id="output-box">הרץ סוכן כדי לראות תוצאות כאן.</pre>
-      </div>
-    </div>
-
-    <!-- LOG TAB -->
-    <div class="tab-content" id="tab-log">
-      <div class="log-panel">
-        <div class="log-toolbar">
-          <span id="log-count">0 פעולות</span>
-          <button class="btn-clear-log" id="btn-clear-log">נקה לוג</button>
-        </div>
-        <div class="log-list" id="log-list">
-          <div class="log-empty">עוד לא הורץ שום סוכן.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SETTINGS TAB -->
-    <div class="tab-content" id="tab-settings">
-      <div class="settings-panel">
-        <h2>הגדרות</h2>
-        <div class="field-group">
-          <label>Anthropic API Key</label>
-          <div class="key-row">
-            <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
-            <button class="btn-save-key" id="btn-save-key">שמור</button>
+    <!-- MAIN -->
+    <main id="main">
+      <!-- Welcome -->
+      <div id="view-welcome">
+        <div class="welcome-icon">🚀</div>
+        <h1 class="welcome-title">Campaign Manager</h1>
+        <p class="welcome-sub">A multi-agent AI system for Meta ad campaigns.<br>Fill in the brief, pick a sequence, and run.</p>
+        <div class="welcome-steps">
+          <div class="w-step">
+            <div class="w-step-num">1</div>
+            <div class="w-step-body">
+              <strong>Set your API key</strong>
+              <span>Go to ⚙️ Settings and enter your Anthropic key. Stored locally — never shared.</span>
+            </div>
           </div>
-          <div class="key-note">המפתח נשמר ב-localStorage בדפדפן שלך בלבד. לא עובר לשרת.</div>
+          <div class="w-step">
+            <div class="w-step-num">2</div>
+            <div class="w-step-body">
+              <strong>Fill in the brief</strong>
+              <span>Product, audience, goal, avatar, USP. The agents read from this automatically.</span>
+            </div>
+          </div>
+          <div class="w-step">
+            <div class="w-step-num">3</div>
+            <div class="w-step-body">
+              <strong>Choose a sequence and run</strong>
+              <span>Agents run one by one. You approve before anything goes live.</span>
+            </div>
+          </div>
         </div>
-        <div class="key-status" id="key-status">
-          <span class="dot red"></span> מפתח לא הוגדר
-        </div>
-        <div class="field-group" style="margin-top:24px">
-          <label>מודל</label>
-          <select id="model-select">
-            <option value="claude-sonnet-4-6">claude-sonnet-4-6 (מומלץ)</option>
-            <option value="claude-haiku-5-5">claude-haiku-5-5 (זול יותר)</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label>מקסימום טוקנים לסוכן</label>
-          <input type="number" id="max-tokens-input" value="1000" min="200" max="4000" />
-        </div>
-        <button class="btn-save-key" id="btn-save-settings" style="margin-top:8px">שמור הגדרות</button>
-        <div style="margin-top:32px; padding-top:20px; border-top:1px solid var(--border)">
-          <button class="btn-clear-log" id="btn-clear-all" style="color:var(--red);border-color:var(--red)">🗑 נקה את כל הנתונים</button>
-          <div class="key-note" style="margin-top:6px">מוחק את כל הבריף, ה-API key וההגדרות מהדפדפן.</div>
-        </div>
+        <button class="btn-start" id="btn-start">Open Brief to start</button>
       </div>
+
+      <!-- Output view (single agent) -->
+      <div id="view-output">
+        <div class="out-header">
+          <div class="out-agent-badge">
+            <span class="out-emoji" id="out-emoji"></span>
+            <span class="out-name"  id="out-name"></span>
+          </div>
+          <div class="out-running-pill" id="out-running-pill" style="display:none">
+            <span class="pulse"></span> Running…
+          </div>
+          <div class="out-actions">
+            <button class="btn-sm" id="btn-copy-out">Copy</button>
+            <button class="btn-sm" id="btn-rerun-out">Re-run</button>
+          </div>
+        </div>
+        <div class="out-box" id="out-box"></div>
+      </div>
+
+      <!-- All outputs -->
+      <div id="view-all">
+        <div class="all-header">
+          <h2>All outputs</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn-sm" id="btn-export-all">Export .txt</button>
+            <button class="btn-sm" id="btn-back-welcome">← Back</button>
+          </div>
+        </div>
+        <div class="out-grid" id="out-grid"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- APPROVAL OVERLAY -->
+<div id="approval-overlay">
+  <div class="approval-modal">
+    <div class="am-icon">⚡</div>
+    <div class="am-title">Ready to execute</div>
+    <div class="am-sub">The Executor has reviewed all optimizations.<br>Approve to proceed, or reject to stop the sequence.</div>
+    <div class="am-actions">
+      <button class="btn-approve" id="btn-approve">Approve</button>
+      <button class="btn-reject"  id="btn-reject">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- BRIEF DRAWER -->
+<div id="brief-overlay"></div>
+<div id="brief-drawer">
+  <div class="bd-header">
+    <span class="bd-title">Campaign Brief</span>
+    <button class="btn-close-brief" id="btn-close-brief">✕</button>
+  </div>
+  <div class="bd-body">
+    <div class="bd-section">Client</div>
+    <div class="field"><label>Client / Business name</label><input type="text" id="f-client" placeholder="e.g. Studio X"/></div>
+
+    <div class="bd-section">Product & Goal</div>
+    <div class="field"><label>Product / Service</label><textarea id="f-product" rows="3" placeholder="Describe the product, tiers, pricing…"></textarea></div>
+    <div class="field"><label>Campaign goal</label><textarea id="f-goal" rows="2" placeholder="Leads, sales, calls — be specific…"></textarea></div>
+    <div class="field"><label>Monthly budget</label><input type="text" id="f-budget" placeholder="3000 (currency)"/></div>
+
+    <div class="bd-section">Audience</div>
+    <div class="field"><label>Target audience</label><textarea id="f-audience" rows="3" placeholder="Gender, age, location, income, interests…"></textarea></div>
+
+    <div class="bd-section">Psychological Profile</div>
+    <div class="field">
+      <label>Avatar</label>
+      <textarea id="f-avatar" rows="8" placeholder="NAME_AGE:&#10;CORE_PAIN:&#10;HIDDEN_SECRET:&#10;COMMON_ENEMY:&#10;2AM_THOUGHT:&#10;TRIBAL_LANGUAGE:&#10;STATUS_DREAM:&#10;BUYING_TRIGGER:"></textarea>
     </div>
 
-  </div><!-- /#app -->
+    <div class="bd-section">Research & Positioning</div>
+    <div class="field">
+      <label>Market research</label>
+      <textarea id="f-research" rows="5" placeholder="PAINS:&#10;DESIRES:&#10;OBJECTIONS:&#10;LANGUAGE:&#10;HOOKS:"></textarea>
+    </div>
+    <div class="field">
+      <label>USP</label>
+      <textarea id="f-usp" rows="5" placeholder="USP_SENTENCE:&#10;MECHANISM:&#10;ENEMY:&#10;BRIDGE:&#10;PRESENTER_VOICE:"></textarea>
+    </div>
+  </div>
+  <div class="bd-footer">
+    <button class="btn-save-brief" id="btn-save-brief">Save brief</button>
+    <button class="btn-sm" id="btn-close-brief2">Close</button>
+  </div>
+</div>
 
-  <script src="src/agents.js"></script>
-  <script src="src/app.js"></script>
+<!-- SETTINGS DRAWER -->
+<div id="settings-overlay"></div>
+<div id="settings-drawer">
+  <div class="bd-header">
+    <span class="bd-title">Settings</span>
+    <button class="btn-close-brief" id="btn-close-settings">✕</button>
+  </div>
+  <div class="bd-body">
+    <div class="bd-section">API Key</div>
+    <div class="field">
+      <label>Anthropic API Key</label>
+      <div class="key-row">
+        <input type="password" id="f-api-key" placeholder="sk-ant-api03-…"/>
+        <button class="btn-save-key" id="btn-save-key">Save</button>
+      </div>
+      <div class="key-note">Stored in your browser's localStorage only. Never sent anywhere except directly to Anthropic.</div>
+    </div>
+    <div class="key-status" id="key-status">
+      <span class="ks-dot red" id="ks-dot"></span>
+      <span id="ks-text">No API key set</span>
+    </div>
+
+    <div class="bd-section" style="margin-top:24px">Model</div>
+    <div class="field">
+      <select id="f-model">
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6 (recommended)</option>
+        <option value="claude-haiku-5-5">claude-haiku-5-5 (faster, cheaper)</option>
+      </select>
+    </div>
+
+    <div class="bd-section">Max tokens per agent</div>
+    <div class="field">
+      <input type="number" id="f-max-tokens" value="1000" min="200" max="4000"/>
+    </div>
+    <button class="btn-save-key" id="btn-save-settings" style="width:100%">Save settings</button>
+
+    <div class="danger-zone">
+      <p>Clear all local data (API key, brief, settings)</p>
+      <button class="btn-danger" id="btn-clear-all">Clear everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── AGENT DEFINITIONS ─────────────────────────────────────────────
+const AGENTS = {
+  hooks:{id:"hooks",label:"Hook Generator",emoji:"🎣",layer:"execution",
+    system:`You are a hook-writing expert for Facebook and Instagram ads. Write in the same language as the brief. Stop the scroll in 3 seconds. Never sound like an ad.
+Exact format:
+PATTERN_INTERRUPT: [hook1] | [hook2] | [hook3]
+CURIOSITY_GAP: [hook1] | [hook2] | [hook3]
+IDENTITY_CLAIM: [hook1] | [hook2] | [hook3]
+BEST_PICK: [strongest hook] — [reason in 8 words]`,
+    buildPrompt(c){return`Product: ${c.product}\nAudience: ${c.audience}\nAvatar: ${c.avatar||"—"}\nUSP: ${c.usp||"—"}\nResearch: ${c.research||"—"}`}
+  },
+  copywriting:{id:"copywriting",label:"Copywriting",emoji:"✍️",layer:"execution",
+    system:`You are a Direct Response copywriter for Meta ads. Same language as brief. Vary sentence lengths. Active voice. One rhetorical question per variation. Never use: "revolutionary","game-changer","transformative".
+Output:
+HOOKS_3: [h1] | [h2] | [h3]
+EMOTIONAL_3: [e1] | [e2] | [e3]
+RATIONAL_3: [r1] | [r2] | [r3]
+CURIOSITY_3: [c1] | [c2] | [c3]
+RECOMMENDED: [which + why, 10 words]`,
+    buildPrompt(c){return`USP: ${c.usp||"—"}\nAvatar: ${c.avatar||"—"}\nWinning hook: ${c.outputs.hooks||"create one"}\nProduct: ${c.product}\nGoal: ${c.goal}`}
+  },
+  adcopy_full:{id:"adcopy_full",label:"Full Ad Post",emoji:"📝",layer:"execution",
+    system:`Write full Facebook ad posts. Same language as brief. PAS model. Vary sentence lengths. Second person. Rhetorical questions. Never sound like an ad.
+Post 1 — EMOTIONAL (pain-focused):
+[full post: hook + body + CTA]
+---
+Post 2 — RATIONAL (ROI):
+[full post: hook + body + CTA]`,
+    buildPrompt(c){return`USP: ${c.usp||"—"}\nAvatar: ${c.avatar||"—"}\nProduct: ${c.product}\nGoal: ${c.goal}\nResearch: ${c.research||"—"}\nHook: ${c.outputs.hooks||""}`}
+  },
+  ugcscript:{id:"ugcscript",label:"UGC Script",emoji:"🎬",layer:"execution",
+    system:`Write UGC scripts for Meta. Same language as brief. Sound like a real person talking to camera.
+HOOK [0-3s]:
+PROBLEM [3-8s]:
+AGITATE [8-15s]:
+SOLUTION [15-25s]:
+PROOF [25-35s]:
+CTA [35-45s]:
+DIRECTOR_NOTE: [1-line delivery direction]`,
+    buildPrompt(c){return`Product: ${c.product}\nAvatar: ${c.avatar||"—"}\nUSP: ${c.usp||"—"}\nHook: ${c.outputs.hooks||""}`}
+  },
+  creative:{id:"creative",label:"Creative Director",emoji:"🎨",layer:"execution",
+    system:`Creative director for Meta ads. Think visually. Be specific.
+IMAGE_CONCEPTS:
+[1]: visual | scene | text overlay | emotion
+[2]: visual | scene | text overlay | emotion
+[3]: visual | scene | text overlay | emotion
+VIDEO_CONCEPTS:
+[1]: opening | story arc | CTA | duration
+[2]: opening | story arc | CTA | duration
+[3]: opening | story arc | CTA | duration
+UGC_CONCEPTS:
+[1]: opener | conflict | resolution | CTA
+[2]: opener | conflict | resolution | CTA
+[3]: opener | conflict | resolution | CTA
+ASPECT_RATIOS: feed:4:5 | story:9:16 | reel:9:16`,
+    buildPrompt(c){const b=parseInt(c.budget)||0;const t=b>10000?"high":b>3000?"mid":"low";return`USP: ${c.usp||"—"}\nAvatar: ${c.avatar||"—"}\nHook: ${c.outputs.hooks||""}\nBudget tier: ${t}\nProduct: ${c.product}`}
+  },
+  mediabuying:{id:"mediabuying",label:"Media Buying",emoji:"💰",layer:"launch",
+    system:`Meta media buyer. Valid JSON only — no markdown, no prose.
+Schema: {"campaigns":[{"name":"","objective":"","budget_daily":"","adsets":[{"name":"","audience":"","placement":"","budget":"","ads":[{"name":"","creative_type":"","copy_type":""}]}]}],"testing_phase":{"duration_days":7,"kill_rule":""},"scaling_rule":"","retargeting":{"window_days":14,"offer":""}}`,
+    buildPrompt(c){const d=Math.round((parseInt(c.budget)||3000)*12/365);return`Daily budget: ${d}\nMonthly: ${c.budget}\nProduct: ${c.product}\nAudience: ${c.audience}\nGoal: ${c.goal}`}
+  },
+  scoring:{id:"scoring",label:"Campaign Score",emoji:"📊",layer:"optimization",
+    system:`Campaign scoring agent. Exact output:
+TOTAL_SCORE: /100
+OFFER: /20 | CREATIVE: /20 | COPY: /15 | AUDIENCE: /15 | FUNNEL: /10 | ECONOMICS: /10 | SCALE: /5 | PSYCHOLOGY: /5
+STRENGTHS: [s1] | [s2]
+CRITICAL_WEAKNESS: [top 1 only]
+HIGHEST_LEVERAGE: [single highest-impact action]
+Max 100 words.`,
+    buildPrompt(c){return`Product: ${c.product}\nAudience: ${c.audience}\nBudget: ${c.budget}\nCopy: ${c.outputs.copywriting?"yes":"no"}\nMedia: ${c.outputs.mediabuying?"yes":"no"}`}
+  },
+  optimizer:{id:"optimizer",label:"Optimizer",emoji:"⚙️",layer:"optimization",
+    system:`Meta ads optimizer. Priority: Creative → Offer → Audience → Budget.
+CHANGE_1:
+  WHAT:
+  WHY: [data point]
+  EXPECTED_IMPACT: [% uplift]
+  CONFIDENCE: [high|med|low]
+CHANGE_2: [same]
+CHANGE_3: [same]
+Max 150 words.`,
+    buildPrompt(c){return`Score: ${c.outputs.scoring||"—"}\nCopy: ${(c.outputs.copywriting||"—").slice(0,200)}\nBudget: ${c.budget}`}
+  },
+  executor:{id:"executor",label:"Executor",emoji:"✅",layer:"orchestration",
+    system:`Approval agent. Never auto-execute. Present clearly and wait.
+━━━━━━━━━━━━━━━━━━━━━━
+RECOMMENDATION: [what to do]
+EXPECTED_IMPROVEMENT: [metric + %]
+RISK_LEVEL: [low|med|high]
+REVERSIBILITY: [instant|24h|permanent]
+CONFIDENCE: [%]
+━━━━━━━━━━━━━━━━━━━━━━
+→ Awaiting approval.
+Max 80 words.`,
+    buildPrompt(c){return`Optimizer: ${c.outputs.optimizer||c.outputs.scoring||"run agents first"}\nScore: ${c.outputs.scoring||"—"}`}
+  }
+};
+
+const SEQUENCES={
+  launch:["hooks","copywriting","adcopy_full","ugcscript","creative","mediabuying","scoring","executor"],
+  copy:  ["hooks","copywriting","adcopy_full","executor"],
+  ugc:   ["hooks","ugcscript","creative","executor"],
+  optimize:["scoring","optimizer","executor"]
+};
+const LAYER_ORDER=["execution","launch","optimization","orchestration"];
+const LAYER_LABELS={execution:"Copy & Content",launch:"Launch",optimization:"Optimize",orchestration:"Approval"};
+
+// ── STATE ─────────────────────────────────────────────────────────
+const state={outputs:{},currentAgent:null,seqRunning:false,approvalResolve:null,abort:null};
+
+// ── UTILS ─────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+function toast(msg,dur=2000){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),dur)}
+function setBadge(mode,text){const b=$("h-badge");b.className="h-badge "+mode;$("h-badge-text").textContent=text}
+
+// ── BRIEF ─────────────────────────────────────────────────────────
+const FIELDS=["client","product","goal","budget","audience","avatar","research","usp"];
+function loadBrief(){const s=JSON.parse(localStorage.getItem("cm_brief")||"null");if(!s)return;FIELDS.forEach(f=>{const el=$("f-"+f);if(el&&s[f]!==undefined)el.value=s[f]})}
+function saveBriefSilent(){const d={};FIELDS.forEach(f=>{d[f]=$("f-"+f)?.value||""});localStorage.setItem("cm_brief",JSON.stringify(d))}
+function getBrief(){const d={outputs:state.outputs};FIELDS.forEach(f=>{d[f]=$("f-"+f)?.value||""});return d}
+
+$("btn-save-brief").addEventListener("click",()=>{saveBriefSilent();toast("Brief saved");closeBrief()});
+$("btn-close-brief").addEventListener("click",closeBrief);
+$("btn-close-brief2").addEventListener("click",closeBrief);
+$("btn-open-brief").addEventListener("click",openBrief);
+$("btn-start").addEventListener("click",openBrief);
+FIELDS.forEach(f=>{const el=$("f-"+f);if(el)el.addEventListener("input",saveBriefSilent)});
+
+function openBrief(){$("brief-overlay").classList.add("show");$("brief-drawer").classList.add("open")}
+function closeBrief(){$("brief-overlay").classList.remove("show");$("brief-drawer").classList.remove("open")}
+$("brief-overlay").addEventListener("click",closeBrief);
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+$("btn-open-settings").addEventListener("click",openSettings);
+$("btn-close-settings").addEventListener("click",closeSettings);
+$("settings-overlay").addEventListener("click",closeSettings);
+function openSettings(){$("settings-overlay").classList.add("show");$("settings-drawer").classList.add("open")}
+function closeSettings(){$("settings-overlay").classList.remove("show");$("settings-drawer").classList.remove("open")}
+
+function updateKeyStatus(){
+  const k=localStorage.getItem("cm_api_key")||"";
+  if(k.startsWith("sk-")){
+    $("ks-dot").className="ks-dot green";
+    $("ks-text").textContent=`Key set (${k.slice(0,14)}…)`;
+    setBadge("ready","Ready");
+  }else{
+    $("ks-dot").className="ks-dot red";
+    $("ks-text").textContent="No API key set";
+  }
+}
+
+$("btn-save-key").addEventListener("click",()=>{
+  const k=$("f-api-key").value.trim();
+  if(k){localStorage.setItem("cm_api_key",k);$("f-api-key").value=""}
+  updateKeyStatus();toast("API key saved");
+});
+$("btn-save-settings").addEventListener("click",()=>{
+  localStorage.setItem("cm_model",$("f-model").value);
+  localStorage.setItem("cm_max_tokens",$("f-max-tokens").value);
+  toast("Settings saved");
+});
+$("btn-clear-all").addEventListener("click",()=>{
+  if(!confirm("Clear all data? This cannot be undone."))return;
+  ["cm_api_key","cm_brief","cm_model","cm_max_tokens"].forEach(k=>localStorage.removeItem(k));
+  FIELDS.forEach(f=>{const el=$("f-"+f);if(el)el.value=""});
+  updateKeyStatus();toast("Cleared");
+});
+
+// ── PIPELINE SIDEBAR ──────────────────────────────────────────────
+function buildPipeline(){
+  const pipe=$("pipeline");
+  pipe.innerHTML="";
+  LAYER_ORDER.forEach(layer=>{
+    const agents=Object.values(AGENTS).filter(a=>a.layer===layer);
+    if(!agents.length)return;
+    const lbl=document.createElement("div");
+    lbl.className="pipe-group-label";lbl.textContent=LAYER_LABELS[layer];
+    pipe.appendChild(lbl);
+    agents.forEach((agent,i)=>{
+      const item=document.createElement("div");
+      item.className="pipe-item";item.id="pipe-"+agent.id;
+      item.innerHTML=`<span class="pipe-emoji">${agent.emoji}</span><span class="pipe-name">${agent.label}</span><span class="pipe-status" id="ps-${agent.id}"></span>`;
+      item.addEventListener("click",()=>showAgentOutput(agent.id));
+      pipe.appendChild(item);
+      if(i<agents.length-1){
+        const conn=document.createElement("div");conn.className="pipe-connector";pipe.appendChild(conn);
+      }
+    });
+  });
+}
+
+function setPipeStatus(id,status){
+  const el=$("ps-"+id);
+  const item=$("pipe-"+id);
+  if(!el)return;
+  el.className="pipe-status "+status;
+  if(item)item.classList.toggle("active",status==="running");
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────────
+function showView(name){
+  ["welcome","output","all"].forEach(v=>{
+    $("view-"+v).style.display=v===name?"block":"none";
+  });
+}
+
+function showAgentOutput(id){
+  if(!state.outputs[id]&&state.currentAgent!==id)return;
+  state.selectedView=id;
+  $("out-emoji").textContent=AGENTS[id]?.emoji||"";
+  $("out-name").textContent=AGENTS[id]?.label||id;
+  $("out-box").textContent=state.outputs[id]||"";
+  $("out-running-pill").style.display=state.currentAgent===id?"flex":"none";
+  showView("output");
+}
+
+$("btn-copy-out").addEventListener("click",()=>{
+  const txt=$("out-box").textContent;
+  navigator.clipboard?.writeText(txt).then(()=>toast("Copied!"));
+});
+$("btn-rerun-out").addEventListener("click",()=>{
+  if(state.selectedView)runSingleAgent(state.selectedView);
+});
+$("btn-view-all").addEventListener("click",()=>{
+  renderAllGrid();showView("all");
+});
+$("btn-back-welcome").addEventListener("click",()=>{
+  showView(Object.keys(state.outputs).length?"output":"welcome");
+});
+$("btn-export-all").addEventListener("click",()=>{
+  const client=$("f-client")?.value||"campaign";
+  const lines=Object.entries(state.outputs)
+    .filter(([,v])=>v&&v.length>10)
+    .map(([id,v])=>`\n${"=".repeat(50)}\n${AGENTS[id]?.emoji} ${AGENTS[id]?.label}\n${"=".repeat(50)}\n${v}`)
+    .join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([lines],{type:"text/plain;charset=utf-8"}));
+  a.download=`${client.replace(/\s+/g,"-")}-${Date.now()}.txt`;a.click();
+});
+
+function renderAllGrid(){
+  const grid=$("out-grid");
+  const done=Object.entries(state.outputs).filter(([,v])=>v&&v.length>10);
+  if(!done.length){grid.innerHTML='<p style="color:var(--text3);font-size:13px">No outputs yet.</p>';return;}
+  grid.innerHTML=done.map(([id,v])=>`
+    <div class="out-card" onclick="showAgentOutputFromAll('${id}')">
+      <div class="oc-top">
+        <span class="oc-emoji">${AGENTS[id]?.emoji||""}</span>
+        <span class="oc-name">${AGENTS[id]?.label||id}</span>
+        <span class="oc-done"></span>
+      </div>
+      <div class="oc-preview">${v.slice(0,200)}</div>
+    </div>
+  `).join("");
+}
+function showAgentOutputFromAll(id){showAgentOutput(id);showView("output")}
+
+// ── API CALL ──────────────────────────────────────────────────────
+async function callAgent(agent,ctx,onChunk,signal){
+  const key=localStorage.getItem("cm_api_key");
+  if(!key)throw new Error("No API key. Open ⚙️ Settings.");
+  const model=localStorage.getItem("cm_model")||"claude-sonnet-4-6";
+  const maxTokens=parseInt(localStorage.getItem("cm_max_tokens")||"1000");
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-calls":"true"},
+    body:JSON.stringify({model,max_tokens:maxTokens,system:agent.system,messages:[{role:"user",content:agent.buildPrompt(ctx)}],stream:true}),
+    signal
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${res.status}`)}
+  const reader=res.body.getReader();const dec=new TextDecoder();let full="";
+  while(true){
+    const{done,value}=await reader.read();if(done)break;
+    for(const line of dec.decode(value).split("\n").filter(l=>l.startsWith("data: "))){
+      try{const d=JSON.parse(line.slice(6));if(d.type==="content_block_delta"&&d.delta?.text){full+=d.delta.text;onChunk(full)}}catch{}
+    }
+  }
+  return full;
+}
+
+// ── RUN SINGLE ────────────────────────────────────────────────────
+async function runSingleAgent(id){
+  const agent=AGENTS[id];if(!agent)return;
+  state.currentAgent=id;
+  state.abort=new AbortController();
+  state.outputs[id]="";
+  setPipeStatus(id,"running");
+  setBadge("running",agent.label);
+  $("h-status-text").textContent=`Running ${agent.label}…`;
+
+  // Show output pane immediately
+  showAgentOutput(id);
+  $("out-running-pill").style.display="flex";
+
+  try{
+    const result=await callAgent(agent,getBrief(),partial=>{
+      state.outputs[id]=partial;
+      if(state.selectedView===id){
+        $("out-box").textContent=partial;
+        // scroll to bottom
+        const box=$("out-box");box.scrollTop=box.scrollHeight;
+      }
+    },state.abort.signal);
+    state.outputs[id]=result;
+    setPipeStatus(id,"done");
+    $("out-running-pill").style.display="none";
+    if(state.selectedView===id)$("out-box").textContent=result;
+    $("h-status-text").textContent=`${agent.label} done`;
+    setBadge("ready","Ready");
+  }catch(e){
+    if(e.name==="AbortError"){setPipeStatus(id,"");setBadge("ready","Stopped");}
+    else{setPipeStatus(id,"error");setBadge("error","Error");toast("Error: "+e.message.slice(0,60),3000);}
+    $("out-running-pill").style.display="none";
+    $("h-status-text").textContent="";
+  }
+  state.currentAgent=null;
+}
+
+// ── RUN SEQUENCE ──────────────────────────────────────────────────
+async function runSequence(){
+  const seq=SEQUENCES[$("seq-select").value];if(!seq)return;
+  state.seqRunning=true;
+  state.abort=new AbortController();
+  $("run-icon").textContent="⏹";$("run-label").textContent="Stop";
+  const btn=$("btn-run");btn.classList.add("stop");
+
+  for(const id of seq){
+    if(state.abort.signal.aborted)break;
+    if(id==="executor"){
+      await runSingleAgent(id);
+      if(state.abort.signal.aborted)break;
+      // Show approval modal
+      $("approval-overlay").classList.add("show");
+      setBadge("running","Awaiting approval");
+      $("h-status-text").textContent="Waiting for your approval…";
+      const approved=await new Promise(res=>{state.approvalResolve=res});
+      $("approval-overlay").classList.remove("show");
+      if(!approved){$("h-status-text").textContent="Rejected";break;}
+      $("h-status-text").textContent="Approved ✓";
+      continue;
+    }
+    await runSingleAgent(id);
+    if(state.abort.signal.aborted)break;
+    await new Promise(r=>setTimeout(r,250));
+  }
+
+  state.seqRunning=false;
+  btn.classList.remove("stop");
+  $("run-icon").textContent="▶";$("run-label").textContent="Run Sequence";
+  if(!state.abort.signal.aborted){setBadge("ready","Done");$("h-status-text").textContent="Sequence complete"}
+}
+
+$("btn-run").addEventListener("click",()=>{
+  if(state.seqRunning){
+    state.abort?.abort();state.approvalResolve?.(false);
+    state.seqRunning=false;
+    $("btn-run").classList.remove("stop");
+    $("run-icon").textContent="▶";$("run-label").textContent="Run Sequence";
+    $("approval-overlay").classList.remove("show");
+    setBadge("ready","Stopped");$("h-status-text").textContent="Stopped";
+  }else{runSequence();}
+});
+
+$("btn-approve").addEventListener("click",()=>state.approvalResolve?.(true));
+$("btn-reject").addEventListener("click",()=>{state.approvalResolve?.(false);state.abort?.abort();$("approval-overlay").classList.remove("show")});
+
+// ── INIT ──────────────────────────────────────────────────────────
+function init(){
+  loadBrief();buildPipeline();updateKeyStatus();
+  const m=localStorage.getItem("cm_model");if(m)$("f-model").value=m;
+  const mt=localStorage.getItem("cm_max_tokens");if(mt)$("f-max-tokens").value=mt;
+  showView("welcome");
+}
+init();
+</script>
 </body>
 </html>
