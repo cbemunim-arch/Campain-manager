@@ -374,7 +374,7 @@ html,body{height:100%;background:var(--bg0);color:var(--text);font-family:'Inter
 
     <div class="bd-section">Max tokens per agent</div>
     <div class="field">
-      <input type="number" id="f-max-tokens" value="1000" min="200" max="4000"/>
+      <input type="number" id="f-max-tokens" value="2000" min="200" max="8000"/>
     </div>
     <button class="btn-save-key" id="btn-save-settings" style="width:100%">Save settings</button>
 
@@ -398,7 +398,7 @@ PATTERN_INTERRUPT: [hook1] | [hook2] | [hook3]
 CURIOSITY_GAP: [hook1] | [hook2] | [hook3]
 IDENTITY_CLAIM: [hook1] | [hook2] | [hook3]
 BEST_PICK: [strongest hook] — [reason in 8 words]`,
-    buildPrompt(c){return`Product: ${c.product}\nAudience: ${c.audience}\nAvatar: ${c.avatar||"—"}\nUSP: ${c.usp||"—"}\nResearch: ${c.research||"—"}`}
+    buildPrompt(c){return`Product: ${t(c.product,300)}\nAudience: ${t(c.audience,200)}\nAvatar: ${t(c.avatar,400)}\nUSP: ${t(c.usp,300)}\nResearch: ${t(c.research,300)}`}
   },
   copywriting:{id:"copywriting",label:"Copywriting",emoji:"✍️",layer:"execution",
     system:`You are a Direct Response copywriter for Meta ads. Same language as brief. Vary sentence lengths. Active voice. One rhetorical question per variation. Never use: "revolutionary","game-changer","transformative".
@@ -408,7 +408,7 @@ EMOTIONAL_3: [e1] | [e2] | [e3]
 RATIONAL_3: [r1] | [r2] | [r3]
 CURIOSITY_3: [c1] | [c2] | [c3]
 RECOMMENDED: [which + why, 10 words]`,
-    buildPrompt(c){return`USP: ${c.usp||"—"}\nAvatar: ${c.avatar||"—"}\nWinning hook: ${c.outputs.hooks||"create one"}\nProduct: ${c.product}\nGoal: ${c.goal}`}
+    buildPrompt(c){return`USP: ${t(c.usp,300)}\nAvatar: ${t(c.avatar,400)}\nWinning hook: ${t(c.outputs.hooks,300)}\nProduct: ${t(c.product,300)}\nGoal: ${t(c.goal,150)}`}
   },
   adcopy_full:{id:"adcopy_full",label:"Full Ad Post",emoji:"📝",layer:"execution",
     system:`Write full Facebook ad posts. Same language as brief. PAS model. Vary sentence lengths. Second person. Rhetorical questions. Never sound like an ad.
@@ -417,7 +417,7 @@ Post 1 — EMOTIONAL (pain-focused):
 ---
 Post 2 — RATIONAL (ROI):
 [full post: hook + body + CTA]`,
-    buildPrompt(c){return`USP: ${c.usp||"—"}\nAvatar: ${c.avatar||"—"}\nProduct: ${c.product}\nGoal: ${c.goal}\nResearch: ${c.research||"—"}\nHook: ${c.outputs.hooks||""}`}
+    buildPrompt(c){return`USP: ${t(c.usp,300)}\nAvatar: ${t(c.avatar,400)}\nProduct: ${t(c.product,300)}\nGoal: ${t(c.goal,150)}\nResearch: ${t(c.research,300)}\nHook: ${t(c.outputs.hooks,200)}`}
   },
   ugcscript:{id:"ugcscript",label:"UGC Script",emoji:"🎬",layer:"execution",
     system:`Write UGC scripts for Meta. Same language as brief. Sound like a real person talking to camera.
@@ -428,7 +428,7 @@ SOLUTION [15-25s]:
 PROOF [25-35s]:
 CTA [35-45s]:
 DIRECTOR_NOTE: [1-line delivery direction]`,
-    buildPrompt(c){return`Product: ${c.product}\nAvatar: ${c.avatar||"—"}\nUSP: ${c.usp||"—"}\nHook: ${c.outputs.hooks||""}`}
+    buildPrompt(c){return`Product: ${t(c.product,300)}\nAvatar: ${t(c.avatar,400)}\nUSP: ${t(c.usp,300)}\nHook: ${t(c.outputs.hooks,200)}`}
   },
   creative:{id:"creative",label:"Creative Director",emoji:"🎨",layer:"execution",
     system:`Creative director for Meta ads. Think visually. Be specific.
@@ -445,12 +445,12 @@ UGC_CONCEPTS:
 [2]: opener | conflict | resolution | CTA
 [3]: opener | conflict | resolution | CTA
 ASPECT_RATIOS: feed:4:5 | story:9:16 | reel:9:16`,
-    buildPrompt(c){const b=parseInt(c.budget)||0;const t=b>10000?"high":b>3000?"mid":"low";return`USP: ${c.usp||"—"}\nAvatar: ${c.avatar||"—"}\nHook: ${c.outputs.hooks||""}\nBudget tier: ${t}\nProduct: ${c.product}`}
+    buildPrompt(c){const b=parseInt(c.budget)||0;const tier=b>10000?"high":b>3000?"mid":"low";return`USP: ${t(c.usp,300)}\nAvatar: ${t(c.avatar,300)}\nHook: ${t(c.outputs.hooks,200)}\nBudget tier: ${tier}\nProduct: ${t(c.product,200)}`}
   },
   mediabuying:{id:"mediabuying",label:"Media Buying",emoji:"💰",layer:"launch",
     system:`Meta media buyer. Valid JSON only — no markdown, no prose.
 Schema: {"campaigns":[{"name":"","objective":"","budget_daily":"","adsets":[{"name":"","audience":"","placement":"","budget":"","ads":[{"name":"","creative_type":"","copy_type":""}]}]}],"testing_phase":{"duration_days":7,"kill_rule":""},"scaling_rule":"","retargeting":{"window_days":14,"offer":""}}`,
-    buildPrompt(c){const d=Math.round((parseInt(c.budget)||3000)*12/365);return`Daily budget: ${d}\nMonthly: ${c.budget}\nProduct: ${c.product}\nAudience: ${c.audience}\nGoal: ${c.goal}`}
+    buildPrompt(c){const d=Math.round((parseInt(c.budget)||3000)*12/365);return`Daily budget: ${d}\nMonthly: ${c.budget}\nProduct: ${t(c.product,300)}\nAudience: ${t(c.audience,200)}\nGoal: ${t(c.goal,150)}`}
   },
   scoring:{id:"scoring",label:"Campaign Score",emoji:"📊",layer:"optimization",
     system:`Campaign scoring agent. Exact output:
@@ -460,7 +460,7 @@ STRENGTHS: [s1] | [s2]
 CRITICAL_WEAKNESS: [top 1 only]
 HIGHEST_LEVERAGE: [single highest-impact action]
 Max 100 words.`,
-    buildPrompt(c){return`Product: ${c.product}\nAudience: ${c.audience}\nBudget: ${c.budget}\nCopy: ${c.outputs.copywriting?"yes":"no"}\nMedia: ${c.outputs.mediabuying?"yes":"no"}`}
+    buildPrompt(c){return`Product: ${t(c.product,300)}\nAudience: ${t(c.audience,200)}\nBudget: ${c.budget}\nCopy sample: ${t(c.outputs.copywriting,400)}\nMedia plan: ${t(c.outputs.mediabuying,200)}`}
   },
   optimizer:{id:"optimizer",label:"Optimizer",emoji:"⚙️",layer:"optimization",
     system:`Meta ads optimizer. Priority: Creative → Offer → Audience → Budget.
@@ -472,7 +472,7 @@ CHANGE_1:
 CHANGE_2: [same]
 CHANGE_3: [same]
 Max 150 words.`,
-    buildPrompt(c){return`Score: ${c.outputs.scoring||"—"}\nCopy: ${(c.outputs.copywriting||"—").slice(0,200)}\nBudget: ${c.budget}`}
+    buildPrompt(c){return`Score: ${t(c.outputs.scoring,300)}\nCopy sample: ${t(c.outputs.copywriting,300)}\nBudget: ${c.budget}\nProduct: ${t(c.product,200)}`}
   },
   executor:{id:"executor",label:"Executor",emoji:"✅",layer:"orchestration",
     system:`Approval agent. Never auto-execute. Present clearly and wait.
@@ -485,9 +485,12 @@ CONFIDENCE: [%]
 ━━━━━━━━━━━━━━━━━━━━━━
 → Awaiting approval.
 Max 80 words.`,
-    buildPrompt(c){return`Optimizer: ${c.outputs.optimizer||c.outputs.scoring||"run agents first"}\nScore: ${c.outputs.scoring||"—"}`}
+    buildPrompt(c){return`Optimizer: ${t(c.outputs.optimizer||c.outputs.scoring,400)}\nScore: ${t(c.outputs.scoring,200)}\nProduct: ${t(c.product,150)}`}
   }
 };
+
+// Truncate long fields to avoid hitting token limits on input
+function t(str,max=600){if(!str)return"—";return str.length>max?str.slice(0,max)+"…":str}
 
 const SEQUENCES={
   launch:["hooks","copywriting","adcopy_full","ugcscript","creative","mediabuying","scoring","executor"],
@@ -653,7 +656,7 @@ async function callAgent(agent,ctx,onChunk,signal){
   const key=localStorage.getItem("cm_api_key");
   if(!key)throw new Error("No API key. Open ⚙️ Settings.");
   const model=localStorage.getItem("cm_model")||"gemini-3.8-flash";
-  const maxTokens=parseInt(localStorage.getItem("cm_max_tokens")||"1000");
+  const maxTokens=parseInt(localStorage.getItem("cm_max_tokens")||"2000");
 
   // Gemini combines system + user into one turn
   const combinedPrompt=`${agent.system}\n\n---\n\n${agent.buildPrompt(ctx)}`;
