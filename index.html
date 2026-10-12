@@ -374,7 +374,7 @@ html,body{height:100%;background:var(--bg0);color:var(--text);font-family:'Inter
 
     <div class="bd-section">Max tokens per agent</div>
     <div class="field">
-      <input type="number" id="f-max-tokens" value="2000" min="200" max="8000"/>
+      <input type="number" id="f-max-tokens" value="3000" min="200" max="8000"/>
     </div>
     <button class="btn-save-key" id="btn-save-settings" style="width:100%">Save settings</button>
 
@@ -400,24 +400,67 @@ IDENTITY_CLAIM: [hook1] | [hook2] | [hook3]
 BEST_PICK: [strongest hook] — [reason in 8 words]`,
     buildPrompt(c){return`Product: ${t(c.product,300)}\nAudience: ${t(c.audience,200)}\nAvatar: ${t(c.avatar,400)}\nUSP: ${t(c.usp,300)}\nResearch: ${t(c.research,300)}`}
   },
-  copywriting:{id:"copywriting",label:"Copywriting",emoji:"✍️",layer:"execution",
-    system:`You are a Direct Response copywriter for Meta ads. Same language as brief. Vary sentence lengths. Active voice. One rhetorical question per variation. Never use: "revolutionary","game-changer","transformative".
-Output:
-HOOKS_3: [h1] | [h2] | [h3]
-EMOTIONAL_3: [e1] | [e2] | [e3]
-RATIONAL_3: [r1] | [r2] | [r3]
-CURIOSITY_3: [c1] | [c2] | [c3]
-RECOMMENDED: [which + why, 10 words]`,
-    buildPrompt(c){return`USP: ${t(c.usp,300)}\nAvatar: ${t(c.avatar,400)}\nWinning hook: ${t(c.outputs.hooks,300)}\nProduct: ${t(c.product,300)}\nGoal: ${t(c.goal,150)}`}
+  copywriting:{id:"copywriting",label:"Copywriting — Style",emoji:"✍️",layer:"execution",
+    system:`אתה קופירייטר בכיר עם 20 שנות ניסיון ב-Direct Response. תפקידך: לשאול את המשתמש שאלה אחת בלבד לפני שאתה כותב.
+
+שאל אותו בדיוק כך:
+"באיזה סגנון/טון תרצה שהקמפיין ייכתב?
+לדוגמה: בועט ואגרסיבי / חברי ואמפתי / מקצועי ויוקרתי / רוחני ועדין / ישיר ועסקי"
+
+חכה לתשובה. אל תכתוב קופי עדיין.`,
+    buildPrompt(c){return`שאל אותי על סגנון הכתיבה הרצוי לפני שאתה מתחיל. פרטי הקמפיין:\nמוצר: ${t(c.product,200)}\nקהל: ${t(c.audience,150)}`}
   },
-  adcopy_full:{id:"adcopy_full",label:"Full Ad Post",emoji:"📝",layer:"execution",
-    system:`Write full Facebook ad posts. Same language as brief. PAS model. Vary sentence lengths. Second person. Rhetorical questions. Never sound like an ad.
-Post 1 — EMOTIONAL (pain-focused):
-[full post: hook + body + CTA]
----
-Post 2 — RATIONAL (ROI):
-[full post: hook + body + CTA]`,
-    buildPrompt(c){return`USP: ${t(c.usp,300)}\nAvatar: ${t(c.avatar,400)}\nProduct: ${t(c.product,300)}\nGoal: ${t(c.goal,150)}\nResearch: ${t(c.research,300)}\nHook: ${t(c.outputs.hooks,200)}`}
+
+  adcopy_full:{id:"adcopy_full",label:"6 פוסטים TOFU/MOFU/BOFU",emoji:"📝",layer:"execution",
+    system:`אתה קופירייטר בכיר עם 20 שנות ניסיון ב-Direct Response ובפסיכולוגיה של השפעה.
+כתוב בשפה שמופיעה בבריף (עברית אם הבריף בעברית).
+
+צור 6 פוסטים לקמפיין לידים:
+• 2 פוסטים TOFU
+• 2 פוסטים MOFU  
+• 2 פוסטים BOFU
+
+לפני כל פוסט ציין:
+• שלב במשפך
+• מבנה הקופי (AIDA / BAB / PAS / SCQA / FAB — בחר את המתאים)
+• קהל היעד המדויק
+• הכאב המרכזי
+• הזווית של הפוסט
+
+כל פוסט חייב לכלול:
+• 2 כותרות חלופיות — 7 מילים בדיוק כל אחת
+• פתיח עד 27 מילים ללא ירידות שורה
+• 3 הוקים שזורים טבעית לאורך הפוסט — לא רשימה
+• מקרה טריגר ספציפי ומציאותי
+• סטורי שיוצר הזדהות עמוקה
+• אופר אחד שתואם לשלב
+• CTA אחד בלבד
+
+כללי TOFU: מודעות בלבד. סיים ב"שמרי את הפוסט" / "שלחי לבן הזוג" / "עקבי לעוד תוכן". אין מחיר.
+כללי MOFU: הצג הפתרון כמענה לכאב. סיים בהנעה לבדיקת התאמה.
+כללי BOFU: גרום לפנייה. שיחת היכרות / זמינות מוגבלת. סיים ב-CTA ברור.
+
+כל פוסט — קהל אחד, כאב אחד, חלום אחד, הבטחה אחת, CTA אחד.
+אין חזרה על אותו קהל/כאב/זווית בין 6 הפוסטים.
+
+פורמט מובייל: עד 7 מילים בשורה. פסקאות קצרות. רווח בין פסקאות.
+
+כללי Humanizing:
+• ערבב משפטים קצרים וארוכים
+• שפה מדוברת ויומיומית — אין "מהפכני", "גיים צ'יינג'ר"
+• גוף שני (את/אתה) + שאלות רטוריות
+• קול פעיל בלבד
+
+בסוף — תן ציון לקמפיין מ-0 עד 100 עם הסבר קצר.`,
+    buildPrompt(c){return`סגנון כתיבה: ${t(c.outputs.copywriting,100)||"ישיר ורגשי"}
+
+מוצר/שירות: ${t(c.product,400)}
+קהל יעד: ${t(c.audience,300)}
+יעד קמפיין: ${t(c.goal,150)}
+אווטאר: ${t(c.avatar,500)}
+מחקר שוק: ${t(c.research,400)}
+USP: ${t(c.usp,400)}
+הוקים שנוצרו: ${t(c.outputs.hooks,300)}`}
   },
   ugcscript:{id:"ugcscript",label:"UGC Script",emoji:"🎬",layer:"execution",
     system:`Write UGC scripts for Meta. Same language as brief. Sound like a real person talking to camera.
@@ -493,9 +536,9 @@ Max 80 words.`,
 function t(str,max=600){if(!str)return"—";return str.length>max?str.slice(0,max)+"…":str}
 
 const SEQUENCES={
-  launch:["hooks","copywriting","adcopy_full","ugcscript","creative","mediabuying","scoring","executor"],
-  copy:  ["hooks","copywriting","adcopy_full","executor"],
-  ugc:   ["hooks","ugcscript","creative","executor"],
+  launch:  ["hooks","copywriting","adcopy_full","ugcscript","creative","mediabuying","scoring","executor"],
+  copy:    ["hooks","copywriting","adcopy_full","executor"],
+  ugc:     ["hooks","ugcscript","creative","executor"],
   optimize:["scoring","optimizer","executor"]
 };
 const LAYER_ORDER=["execution","launch","optimization","orchestration"];
@@ -656,7 +699,7 @@ async function callAgent(agent,ctx,onChunk,signal){
   const key=localStorage.getItem("cm_api_key");
   if(!key)throw new Error("No API key. Open ⚙️ Settings.");
   const model=localStorage.getItem("cm_model")||"gemini-3.8-flash";
-  const maxTokens=parseInt(localStorage.getItem("cm_max_tokens")||"2000");
+  const maxTokens=parseInt(localStorage.getItem("cm_max_tokens")||"3000");
 
   // Gemini combines system + user into one turn
   const combinedPrompt=`${agent.system}\n\n---\n\n${agent.buildPrompt(ctx)}`;
