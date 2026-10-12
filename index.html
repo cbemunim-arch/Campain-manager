@@ -365,10 +365,10 @@ html,body{height:100%;background:var(--bg0);color:var(--text);font-family:'Inter
     <div class="bd-section" style="margin-top:24px">Model</div>
     <div class="field">
       <select id="f-model">
-        <option value="gemini-2.5-flash">gemini-2.5-flash — Free, fast ✓ recommended</option>
-        <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17 — Free, stable</option>
+        <option value="gemini-3.8-flash">gemini-3.8-flash — Free, recommended ✓</option>
+        <option value="gemini-2.5-flash">gemini-2.5-flash — Free, stable</option>
         <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite — Free, fastest</option>
-        <option value="gemini-1.5-flash">gemini-1.5-flash — Free, legacy fallback</option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash — Free, legacy</option>
       </select>
     </div>
 
@@ -652,7 +652,7 @@ function showAgentOutputFromAll(id){showAgentOutput(id);showView("output")}
 async function callAgent(agent,ctx,onChunk,signal){
   const key=localStorage.getItem("cm_api_key");
   if(!key)throw new Error("No API key. Open ⚙️ Settings.");
-  const model=localStorage.getItem("cm_model")||"gemini-2.5-flash";
+  const model=localStorage.getItem("cm_model")||"gemini-3.8-flash";
   const maxTokens=parseInt(localStorage.getItem("cm_max_tokens")||"1000");
 
   // Gemini combines system + user into one turn
@@ -828,7 +828,7 @@ $("btn-reject").addEventListener("click",()=>{state.approvalResolve?.(false);sta
 // ── INIT ──────────────────────────────────────────────────────────
 function init(){
   loadBrief();buildPipeline();updateKeyStatus();
-  const m=localStorage.getItem("cm_model")||"gemini-2.5-flash";$("f-model").value=m;
+  const m=localStorage.getItem("cm_model")||"gemini-3.8-flash";$("f-model").value=m;
   const mt=localStorage.getItem("cm_max_tokens");if(mt)$("f-max-tokens").value=mt;
   showView("welcome");
 }
